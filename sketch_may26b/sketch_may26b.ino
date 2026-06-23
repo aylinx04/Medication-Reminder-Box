@@ -1,104 +1,232 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
-const byte LED_PIN = 13;
+#include <ThreeWire.h>
+#include <RtcDS1302.h>
+
+// -------------------- PINS --------------------
 const byte BUTTON_PIN = 2;
 const byte BUZZER_PIN = A3;
 
+// Medikamenten-LEDs
+const byte MORNING_LED = 13;
+const byte NOON_LED    = 12;
+const byte EVENING_LED = 11;
+
+// -------------------- ALARMZEITEN --------------------
+const byte morningHour   = 11;
+const byte morningMinute = 50;
+
+const byte noonHour      = 11;
+const byte noonMinute    = 51;
+
+const byte eveningHour   = 11;
+const byte eveningMinute = 52;
+
+// -------------------- RTC --------------------
+ThreeWire myWire(7, 6, 8); // DAT, CLK, RST
+RtcDS1302<ThreeWire> Rtc(myWire);
+
+// -------------------- LCD --------------------
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+// -------------------- ALARM --------------------
 bool alarmActive = false;
-
-unsigned long lastAlarmTime = 0;
 unsigned long lastBlink = 0;
+int lastAlarmMinute = -1;
 
-const unsigned long alarmInterval = 10000; // 10 Sekunden
+enum AlarmType
+{
+    NONE,
+    MORNING,
+    NOON,
+    EVENING
+};
 
-void setup() {
-  Serial.begin(9600);
+AlarmType currentAlarm = NONE;
 
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
+void setup()
+{
+    Serial.begin(9600);
 
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    pinMode(BUZZER_PIN, OUTPUT);
 
-  lcd.init();
-  lcd.backlight();
+    pinMode(MORNING_LED, OUTPUT);
+    pinMode(NOON_LED, OUTPUT);
+    pinMode(EVENING_LED, OUTPUT);
 
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("System bereit");
-}
+    digitalWrite(MORNING_LED, LOW);
+    digitalWrite(NOON_LED, LOW);
+    digitalWrite(EVENING_LED, LOW);
 
-void loop() {
+    lcd.init();
+    lcd.backlight();
 
-  unsigned long now = millis();
+    Rtc.Begin();
 
-  // Alarm nach 10 Sekunden starten
-  if (!alarmActive && now - lastAlarmTime >= alarmInterval) {
+    if (!Rtc.GetIsRunning())
+    {
+        Rtc.SetIsRunning(true);
+    }
 
-    alarmActive = true;
-    lastAlarmTime = now;
+    if (!Rtc.IsDateTimeValid())
+    {
+        Rtc.SetDateTime(RtcDateTime(__DATE__, __TIME__));
+    }
 
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("MEDIKAMENT!");
-    lcd.setCursor(0, 1);
-    lcd.print("Taste druecken");
+    lcd.print("System bereit");
 
-    Serial.println("ALARM");
-  }
+    delay(2000);
+    lcd.clear();
+}
 
-  // Alarm aktiv
-  if (alarmActive) {
+void loop()
+{
+    RtcDateTime nowRtc = Rtc.GetDateTime();
 
-    // LED blinken + Buzzer piepen
-    if (now - lastBlink >= 300) {
+    // Uhrzeit nur anzeigen wenn kein Alarm aktiv
+    if (!alarmActive)
+    {
+        lcd.setCursor(0, 0);
 
-      lastBlink = now;
+        if (nowRtc.Hour() < 10) lcd.print("0");
+        lcd.print(nowRtc.Hour());
+        lcd.print(":");
 
-      static bool state = false;
-      state = !state;
+        if (nowRtc.Minute() < 10) lcd.print("0");
+        lcd.print(nowRtc.Minute());
+        lcd.print(":");
 
-      digitalWrite(LED_PIN, state);
+        if (nowRtc.Second() < 10) lcd.print("0");
+        lcd.print(nowRtc.Second());
 
-      if (state) {
-        tone(BUZZER_PIN, 1000);
-      } else {
-        noTone(BUZZER_PIN);
-      }
+        lcd.print("   ");
     }
 
-    // Button druecken = Alarm stoppen
-    if (digitalRead(BUTTON_PIN) == LOW) {
+    // -------------------- ALARMZEITEN --------------------
+    bool alarmTime =
+        (nowRtc.Hour() == morningHour &&
+         nowRtc.Minute() == morningMinute) ||
 
-      delay(30); // Entprellung
+        (nowRtc.Hour() == noonHour &&
+         nowRtc.Minute() == noonMinute) ||
 
-      if (digitalRead(BUTTON_PIN) == LOW) {
-        Serial.println("BUTTON GEDRUECKT");
+        (nowRtc.Hour() == eveningHour &&
+         nowRtc.Minute() == eveningMinute);
 
-        alarmActive = false;
+    if (alarmTime && lastAlarmMinute != nowRtc.Minute())
+    {
+        alarmActive = true;
+        lastAlarmMinute = nowRtc.Minute();
 
-        digitalWrite(LED_PIN, LOW);
-        noTone(BUZZER_PIN);
-
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Alarm gestoppt");
-
-        Serial.println("Alarm gestoppt");
-
-        // Warten bis Taste losgelassen wird
-        while (digitalRead(BUTTON_PIN) == LOW) {
-          delay(10);
+        if (nowRtc.Hour() == morningHour &&
+            nowRtc.Minute() == morningMinute)
+        {
+            currentAlarm = MORNING;
+        }
+        else if (nowRtc.Hour() == noonHour &&
+                 nowRtc.Minute() == noonMinute)
+        {
+            currentAlarm = NOON;
+        }
+        else if (nowRtc.Hour() == eveningHour &&
+                 nowRtc.Minute() == eveningMinute)
+        {
+            currentAlarm = EVENING;
         }
 
-        delay(500);
-
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("Bereit...");
-      }
+
+        if (currentAlarm == MORNING)
+        {
+            lcd.print("MORGEN");
+        }
+        else if (currentAlarm == NOON)
+        {
+            lcd.print("MITTAG");
+        }
+        else if (currentAlarm == EVENING)
+        {
+            lcd.print("ABEND");
+        }
+
+        lcd.setCursor(0, 1);
+        lcd.print("Medikament!");
     }
-  }
+
+    // -------------------- ALARM AKTIV --------------------
+    if (alarmActive)
+    {
+        unsigned long nowMillis = millis();
+
+        if (nowMillis - lastBlink >= 300)
+        {
+            lastBlink = nowMillis;
+
+            static bool blinkState = false;
+            blinkState = !blinkState;
+
+            digitalWrite(MORNING_LED, LOW);
+            digitalWrite(NOON_LED, LOW);
+            digitalWrite(EVENING_LED, LOW);
+
+            if (currentAlarm == MORNING)
+            {
+                digitalWrite(MORNING_LED, blinkState);
+            }
+            else if (currentAlarm == NOON)
+            {
+                digitalWrite(NOON_LED, blinkState);
+            }
+            else if (currentAlarm == EVENING)
+            {
+                digitalWrite(EVENING_LED, blinkState);
+            }
+
+            if (blinkState)
+            {
+                tone(BUZZER_PIN, 1000);
+            }
+            else
+            {
+                noTone(BUZZER_PIN);
+            }
+        }
+
+        // Taster gedrückt
+        if (digitalRead(BUTTON_PIN) == LOW)
+        {
+            delay(30);
+
+            if (digitalRead(BUTTON_PIN) == LOW)
+            {
+                alarmActive = false;
+                currentAlarm = NONE;
+
+                digitalWrite(MORNING_LED, LOW);
+                digitalWrite(NOON_LED, LOW);
+                digitalWrite(EVENING_LED, LOW);
+
+                noTone(BUZZER_PIN);
+
+                lcd.clear();
+                lcd.setCursor(0, 0);
+                lcd.print("Einnahme OK");
+
+                while (digitalRead(BUTTON_PIN) == LOW)
+                {
+                    delay(10);
+                }
+
+                delay(1000);
+                lcd.clear();
+            }
+        }
+    }
+
+    delay(100);
 }
