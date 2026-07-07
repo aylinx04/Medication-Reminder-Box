@@ -4,16 +4,16 @@
 #include <ThreeWire.h>
 #include <RtcDS1302.h>
 
-// -------------------- PINS --------------------
+//PINS
 const byte BUTTON_PIN = 2;
 const byte BUZZER_PIN = A3;
 
-// Medikamenten-LEDs
+//Medikamenten-LEDs
 const byte MORNING_LED = 13;
 const byte NOON_LED    = 12;
 const byte EVENING_LED = 11;
 
-// -------------------- ALARMZEITEN --------------------
+//ALARMZEITEN
 const byte morningHour   = 11;
 const byte morningMinute = 40;
 
@@ -23,14 +23,14 @@ const byte noonMinute    = 41;
 const byte eveningHour   = 11;
 const byte eveningMinute = 42;
 
-// -------------------- RTC --------------------
+//RTC
 ThreeWire myWire(7, 6, 8); // DAT, CLK, RST
 RtcDS1302<ThreeWire> Rtc(myWire);
 
-// -------------------- LCD --------------------
+//LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// -------------------- ALARM --------------------
+//ALARM
 bool alarmActive = false;
 unsigned long lastBlink = 0;
 int lastAlarmMinute = -1;
@@ -106,7 +106,7 @@ void loop()
         lcd.print("   ");
     }
 
-    // -------------------- ALARMZEITEN --------------------
+    //ALARMZEITEN
     bool alarmTime =
         (nowRtc.Hour() == morningHour &&
          nowRtc.Minute() == morningMinute) ||
@@ -158,7 +158,7 @@ void loop()
         lcd.print("Medikament!");
     }
 
-    // -------------------- ALARM AKTIV --------------------
+    //ALARM AKTIV
     if (alarmActive)
     {
         unsigned long nowMillis = millis();
