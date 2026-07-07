@@ -15,13 +15,13 @@ const byte EVENING_LED = 11;
 
 // -------------------- ALARMZEITEN --------------------
 const byte morningHour   = 11;
-const byte morningMinute = 50;
+const byte morningMinute = 40;
 
 const byte noonHour      = 11;
-const byte noonMinute    = 51;
+const byte noonMinute    = 41;
 
 const byte eveningHour   = 11;
-const byte eveningMinute = 52;
+const byte eveningMinute = 42;
 
 // -------------------- RTC --------------------
 ThreeWire myWire(7, 6, 8); // DAT, CLK, RST
