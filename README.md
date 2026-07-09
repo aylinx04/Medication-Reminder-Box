@@ -144,9 +144,13 @@ Larger display for improved accessibility
 
 
 Sources that helped us with the implementation:
+
 https://circuitdigest.com/microcontroller-projects/arduino-medicine-reminder 
+
 https://justdoelectronics.com/medicine-reminder-with-arduino/ 
+
 https://www.youtube.com/watch?v=UA0kP0PIl4A
+
 https://youtu.be/ZSdc1dorKFM?si=2guMzU51YCGyOplA
 
 
