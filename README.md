@@ -2,7 +2,7 @@ Smart Medication Reminder Box
 
 Overview
 
-The Smart Medication Reminder Box is an Arduino-based assistive device designed to remind users to take their medication at predefined times. The system combines visual, audible, and interactive feedback to support people who may forget their medication or require additional reminders.
+The Smart Medication Reminder Box is an Arduino-based assistive device designed to remind users to take their medication at predefined times. The system combines visual, audible and interactive feedback to support people who may forget their medication or require additional reminders.
 
 Hardware
 
@@ -141,6 +141,13 @@ Battery backup
 Bluetooth or Wi-Fi notifications
 Mobile app integration
 Larger display for improved accessibility
+
+
+Sources that helped us with the implementation:
+https://circuitdigest.com/microcontroller-projects/arduino-medicine-reminder 
+https://justdoelectronics.com/medicine-reminder-with-arduino/ 
+https://www.youtube.com/watch?v=UA0kP0PIl4A
+https://youtu.be/ZSdc1dorKFM?si=2guMzU51YCGyOplA
 
 
 
