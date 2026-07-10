@@ -143,6 +143,8 @@ Bluetooth or Wi-Fi notifications
 Mobile app integration
 Larger display for improved accessibility
 
+Our Wowki Sketch:
+https://wokwi.com/projects/465733220552249345 
 
 Sources that helped us with the implementation:
 
